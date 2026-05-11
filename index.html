@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>면접 평가 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:#f4f3ef;color:#1a1a18;min-height:100vh;font-size:14px;line-height:1.6;}
+.wrap{max-width:720px;margin:0 auto;padding:1.5rem 1rem 5rem;}
+input,select,textarea,button{font-family:inherit;font-size:13px;}
+input[type=text],input[type=password],select,textarea{width:100%;padding:8px 12px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18;outline:none;transition:border-color .15s,box-shadow .15s;}
+input[type=text]:focus,input[type=password]:focus,select:focus,textarea:focus{border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,117,.12);}
+input[type=number]{-moz-appearance:textfield;width:100%;padding:8px 12px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18;outline:none;transition:border-color .15s;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]:focus{border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,117,.12);}
+.card{background:#fff;border:1px solid #e0ddd5;border-radius:12px;overflow:hidden;margin-bottom:12px;}
+.card-head{display:flex;justify-content:space-between;align-items:center;padding:.65rem 1.25rem;background:#f9f8f4;border-bottom:1px solid #e0ddd5;}
+.card-head-title{font-size:13px;font-weight:500;}
+.card-sub{font-size:11px;color:#888780;}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 10px;border-radius:20px;}
+.bt{background:#E1F5EE;color:#0F6E56;}.bb{background:#E6F1FB;color:#185FA5;}.ba{background:#FAEEDA;color:#854F0B;}
+.pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 9px;border-radius:20px;}
+.ph{background:#E1F5EE;color:#0F6E56;}.pm{background:#E6F1FB;color:#185FA5;}.pl{background:#FAEEDA;color:#854F0B;}.pp{background:#FCEBEB;color:#A32D2D;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:400;transition:all .15s;border:1px solid #d3d1c7;background:transparent;color:#1a1a18;}
+.btn:hover{background:#f4f3ef;}
+.btn.primary{background:#1D9E75;color:#fff;border-color:#1D9E75;font-weight:500;}
+.btn.primary:hover{background:#178f68;}
+.btn.danger{color:#A32D2D;border-color:#f09595;}
+.btn.danger:hover{background:#FCEBEB;}
+.btn.sm{padding:5px 12px;font-size:11px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.row{display:grid;gap:8px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.score-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-left:1px solid #e0ddd5;padding:.5rem;}
+.score-lbl{font-size:10px;color:#aaa89f;}
+.sinp{width:52px;height:38px;border:1px solid #d3d1c7;border-radius:8px;text-align:center;font-size:16px;font-weight:500;background:#fff;color:#1a1a18;font-family:inherit;padding:0;-moz-appearance:textfield;}
+.sinp::-webkit-inner-spin-button,.sinp::-webkit-outer-spin-button{-webkit-appearance:none;}
+.sinp:focus{border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,117,.12);outline:none;}
+.sinp.blue{border-color:#378ADD;}
+.comp-row{display:grid;grid-template-columns:1fr 80px;border-bottom:1px solid #e0ddd5;}
+.comp-row:last-of-type{border-bottom:none;}
+.comp-content{padding:.875rem .875rem .875rem 1.25rem;}
+.comp-name{font-size:12px;font-weight:500;margin-bottom:3px;}
+.comp-desc{font-size:11px;color:#5F5E5A;font-style:italic;margin-bottom:6px;line-height:1.5;}
+.checks{font-size:11px;color:#888780;line-height:1.7;list-style:none;}
+.checks li{position:relative;padding-left:.875rem;}
+.checks li::before{content:'·';position:absolute;left:0;color:#b4b2a9;}
+.subtotal{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:.6rem 1rem;background:#f9f8f4;border-top:1px solid #e0ddd5;}
+.stval{font-size:16px;font-weight:500;min-width:24px;text-align:right;}
+.stmax{font-size:12px;color:#888780;}
+.jnote{font-size:11px;color:#888780;background:#f9f8f4;padding:.5rem .875rem;border-radius:6px;border-left:3px solid #d3d1c7;line-height:1.55;margin-bottom:1rem;}
+.jbig{width:80px;height:52px;border:2px solid #378ADD;border-radius:10px;text-align:center;font-size:22px;font-weight:500;background:#fff;color:#1a1a18;font-family:inherit;-moz-appearance:textfield;}
+.jbig::-webkit-inner-spin-button,.jbig::-webkit-outer-spin-button{-webkit-appearance:none;}
+.jbig:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 2px rgba(56,138,221,.12);}
+.at{font-size:10px;font-weight:500;color:#888780;letter-spacing:.06em;margin-bottom:7px;}
+.anchor-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.anchor-tbl thead tr{background:#f9f8f4;}
+.anchor-tbl th{text-align:left;padding:5px 10px;font-weight:500;font-size:10px;color:#5F5E5A;border-bottom:1px solid #e0ddd5;}
+.anchor-tbl td{padding:6px 10px;border-bottom:1px solid #e0ddd5;vertical-align:middle;}
+.anchor-tbl tr:last-child td{border-bottom:none;}
+.total-bar{display:flex;justify-content:space-between;align-items:center;padding:1.25rem;background:#f4f3ef;border:1px solid #e0ddd5;border-radius:12px;margin-bottom:12px;}
+.total-score{font-size:40px;font-weight:700;transition:color .2s;}
+.note-sec{padding:.875rem 1.25rem;border-top:1px solid #e0ddd5;}
+.note-lbl{font-size:10px;color:#888780;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.note-badge{font-size:9px;padding:1px 7px;border-radius:10px;background:#f0f0ec;color:#888780;}
+.cbadge{font-size:9px;padding:1px 7px;border-radius:10px;background:#E1F5EE;color:#0F6E56;}
+.nb{width:100%;border:1px solid #d3d1c7;border-radius:8px;background:#f9f8f4;resize:none;font-family:inherit;font-size:12px;color:#1a1a18;padding:8px 12px;line-height:1.6;}
+.cb{width:100%;border:1px solid #c5c3bc;border-radius:8px;background:#fff;resize:none;font-family:inherit;font-size:12px;color:#1a1a18;padding:8px 12px;line-height:1.6;}
+.nb:focus,.cb:focus{outline:none;border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,117,.1);}
+.tab-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.tab{padding:6px 16px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #d3d1c7;background:transparent;font-family:inherit;color:#1a1a18;transition:all .15s;}
+.tab:hover{background:#f4f3ef;}
+.tab.active{background:#1D9E75;color:#fff;border-color:#1D9E75;font-weight:500;}
+.list-row{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-bottom:1px solid #e0ddd5;}
+.list-row:last-child{border-bottom:none;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.stat-card{background:#f9f8f4;border-radius:8px;padding:.75rem 1rem;}
+.stat-lbl{font-size:10px;color:#888780;margin-bottom:3px;}
+.stat-val{font-size:18px;font-weight:500;}
+.screen-title{font-size:20px;font-weight:500;margin-bottom:4px;}
+.screen-sub{font-size:12px;color:#888780;margin-bottom:1.5rem;}
+.back-btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#888780;background:none;border:none;cursor:pointer;font-family:inherit;padding:0;margin-bottom:1.25rem;}
+.back-btn:hover{color:#1a1a18;}
+.cand-btn{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:.875rem 1.25rem;margin-bottom:8px;background:#fff;border:1px solid #e0ddd5;border-radius:10px;cursor:pointer;font-family:inherit;transition:border-color .15s;}
+.cand-btn:hover{border-color:#1D9E75;}
+.cand-btn.done{background:#f9f8f4;}
+.empty{padding:2rem 1.25rem;text-align:center;font-size:13px;color:#888780;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
+.info-card{background:#f9f8f4;border-radius:8px;padding:.875rem 1.1rem;}
+.info-card-title{font-size:10px;font-weight:500;color:#888780;letter-spacing:.06em;margin-bottom:8px;}
+.loading{display:flex;align-items:center;justify-content:center;height:200px;font-size:13px;color:#888780;}
+.home-card{padding:2rem 1.5rem;text-align:center;cursor:pointer;background:#fff;border:1px solid #e0ddd5;border-radius:12px;transition:border-color .15s,box-shadow .15s;font-family:inherit;width:100%;}
+.home-card:hover{border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.08);}
+.icon-lg{font-size:28px;display:block;margin-bottom:10px;color:#888780;}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">불러오는 중...</div></div>
+
+<script>
+const SUPABASE_URL = https://wcjlwjfucbcvamtioecx.supabase.co
+const SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indjamx3amZ1Y2JjdmFtdGlvZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzAwNzQsImV4cCI6MjA5MzcwNjA3NH0.gcIeOI0eFfnmxJfjg0k3zXJE-KDUGEElyD1opehzH8Q
+const ADMIN_CODE   = '2025';
+</script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback } = React;
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const RANKS = ['마케팅','경영지원','옹호사업','국내사업'];
+const COMPS = [
+  { id:'c1', name:'1. 자기주도적 학습 및 변화 수용성', desc:'새로운 업무·환경 변화에 스스로 학습하고 적극적으로 적응하며 성장하려는 태도와 역량',
+    checks:['새 직무를 위해 사전에 스스로 학습하거나 준비한 경험이 있는가?','생소한 업무를 빠르게 익혀 성과를 낸 경험이 있는가?','새로운 환경·업무 변화에 유연하게 적응한 경험이 있는가?','단순한 흥미를 넘어 직무가 성장과 조직 기여에 왜 필요한지 설명할 수 있는가?']},
+  { id:'c2', name:'2. 조직 이해 및 협업 역량', desc:'조직의 방향성과 일하는 방식을 이해하고, 다양한 구성원과 협업하며 조직에 긍정적으로 기여할 수 있는 역량',
+    checks:['조직 전체 관점에서 의사결정한 경험이 있는가?','타 부서·다양한 구성원과 협업하여 성과를 만든 경험이 있는가?','갈등·이견을 건설적으로 해결한 경험이 있는가?','본인의 업무 스타일을 이해하고 조직 방식에 맞게 조율할 수 있는가?','어려운 상황에서도 책임감 있게 조직에 기여하려는 태도가 있는가?']},
+  { id:'c3', name:'3. 직무이해 기반의 성과창출 역량', desc:'지원 직무의 역할과 흐름을 이해하고, 기존 경험·역량을 활용해 실질적인 성과를 창출할 수 있는 역량',
+    checks:['지원 직무에 대한 이해도가 있는가?','현재 경험이 지원 직무에서 어떤 시너지를 낼 수 있는지 설명할 수 있는가?','기존 강점을 활용하여 새로운 직무에서 어떤 기여를 할 수 있는가?','직무 이동 후 초기 적응 과제를 현실적으로 인식하고 있는가?']},
+  { id:'c4', name:'4. 문제해결 및 실행 역량', desc:'업무 수행 중 발생하는 문제를 분석하고 우선순위를 설정하여 실행 가능한 해결방안을 도출·추진하는 역량',
+    checks:['예상치 못한 문제를 해결한 경험이 있는가?','제한된 자원 속에서 성과 중심으로 업무를 추진한 경험이 있는가?','우선순위를 조정하며 업무를 수행한 경험이 있는가?','논리적 근거로 대안을 제시하거나 실행까지 연결한 경험이 있는가?','새로운 환경에서 발생 가능한 초기 문제를 어떻게 관리할지 설명할 수 있는가?']},
+];
+
+function vn(val){ const n=parseInt(val); return isNaN(n)?0:n; }
+function scoreColor(s){ return s>=80?'#1D9E75':s>=60?'#378ADD':s>=40?'#BA7517':'#E24B4A'; }
+
+async function getCandidates(){ const {data}=await db.from('candidates').select('*').order('created_at'); return data||[]; }
+async function getInterviewers(){ const {data}=await db.from('interviewers').select('*').order('created_at'); return data||[]; }
+async function getSubmissions(){ const {data}=await db.from('submissions').select('*').order('submitted_at'); return data||[]; }
+async function addCandidate(c){ await db.from('candidates').insert(c); }
+async function delCandidate(id){ await db.from('candidates').delete().eq('id',id); }
+async function addInterviewer(name){ await db.from('interviewers').insert({name}); }
+async function delInterviewer(id){ await db.from('interviewers').delete().eq('id',id); }
+async function saveSubmission(s){ await db.from('submissions').insert(s); }
+
+function App(){
+  const [screen,setScreen]=useState('home');
+  const [candidates,setCandidates]=useState([]);
+  const [interviewers,setInterviewers]=useState([]);
+  const [submissions,setSubmissions]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [ivName,setIvName]=useState('');
+  const [selCand,setSelCand]=useState(null);
+  const [adminCode,setAdminCode]=useState('');
+  const [adminTab,setAdminTab]=useState('candidates');
+  const [detailCand,setDetailCand]=useState(null);
+  const [submittedName,setSubmittedName]=useState('');
+
+  const loadAll=useCallback(async()=>{
+    setLoading(true);
+    const [c,i,s]=await Promise.all([getCandidates(),getInterviewers(),getSubmissions()]);
+    setCandidates(c); setInterviewers(i); setSubmissions(s);
+    setLoading(false);
+  },[]);
+
+  useEffect(()=>{ if(screen==='admin'||screen==='iv-candidates') loadAll(); },[screen]);
+  const go=s=>{ setDetailCand(null); setScreen(s); };
+
+  if(screen==='home') return (
+    <div className="wrap">
+      <div style={{textAlign:'center',padding:'2.5rem 0 2rem'}}>
+        <p style={{fontSize:10,letterSpacing:'.1em',color:'#888780',marginBottom:6}}>INTERVIEW EVALUATION SYSTEM</p>
+        <h1 style={{fontSize:24,fontWeight:500,marginBottom:6}}>면접 평가 시스템</h1>
+        <p style={{fontSize:13,color:'#888780'}}>역할을 선택해 주세요</p>
+      </div>
+      <div className="row2" style={{maxWidth:400,margin:'0 auto'}}>
+        <button className="home-card" onClick={()=>go('admin-auth')}>
+          <i className="ti ti-settings icon-lg"/>
+          <p style={{fontSize:15,fontWeight:500,marginBottom:4}}>실무자</p>
+          <p style={{fontSize:11,color:'#888780'}}>지원자 등록 · 결과 확인</p>
+        </button>
+        <button className="home-card" onClick={()=>go('iv-select')}>
+          <i className="ti ti-edit icon-lg"/>
+          <p style={{fontSize:15,fontWeight:500,marginBottom:4}}>면접관</p>
+          <p style={{fontSize:11,color:'#888780'}}>평가표 작성 · 제출</p>
+        </button>
+      </div>
+    </div>
+  );
+
+  if(screen==='admin-auth') return (
+    <div className="wrap" style={{maxWidth:360,margin:'0 auto'}}>
+      <button className="back-btn" onClick={()=>go('home')}><i className="ti ti-arrow-left"/> 뒤로</button>
+      <h2 className="screen-title">관리자 코드 입력</h2>
+      <p className="screen-sub">실무자 전용 화면입니다</p>
+      <div className="card" style={{padding:'1.25rem'}}>
+        <div className="row" style={{marginBottom:10}}>
+          <input type="password" placeholder="코드 입력" value={adminCode}
+            onChange={e=>setAdminCode(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&(adminCode===ADMIN_CODE?(setAdminCode(''),go('admin')):alert('코드가 올바르지 않습니다.'))}/>
+        </div>
+        <button className="btn primary" style={{width:'100%',justifyContent:'center'}}
+          onClick={()=>adminCode===ADMIN_CODE?(setAdminCode(''),go('admin')):alert('코드가 올바르지 않습니다.')}>확인</button>
+      </div>
+    </div>
+  );
+
+  if(screen==='admin') return (
+    <AdminScreen candidates={candidates} setCandidates={setCandidates}
+      interviewers={interviewers} setInterviewers={setInterviewers}
+      submissions={submissions} loading={loading} loadAll={loadAll}
+      adminTab={adminTab} setAdminTab={setAdminTab}
+      detailCand={detailCand} setDetailCand={setDetailCand}
+      onExit={()=>go('home')}/>
+  );
+
+  if(screen==='iv-select') return (
+    <div className="wrap" style={{maxWidth:400,margin:'0 auto'}}>
+      <button className="back-btn" onClick={()=>go('home')}><i className="ti ti-arrow-left"/> 뒤로</button>
+      <h2 className="screen-title">면접관 선택</h2>
+      <p className="screen-sub">본인 이름을 선택해 주세요</p>
+      {loading&&<div className="loading">불러오는 중...</div>}
+      {!loading&&interviewers.length===0&&<div className="empty">관리자가 면접관 목록을 등록하지 않았습니다.<br/><br/><button className="btn sm" onClick={loadAll}><i className="ti ti-refresh"/>새로고침</button></div>}
+      {interviewers.map(iv=>(
+        <button key={iv.id} className="cand-btn" onClick={()=>{setIvName(iv.name);go('iv-candidates');}}>
+          <span style={{fontSize:14,fontWeight:500}}>{iv.name}</span>
+          <i className="ti ti-arrow-right" style={{color:'#b4b2a9'}}/>
+        </button>
+      ))}
+    </div>
+  );
+
+  if(screen==='iv-candidates') return (
+    <IvCandidatesScreen ivName={ivName} candidates={candidates} submissions={submissions}
+      loading={loading} loadAll={loadAll} onBack={()=>go('iv-select')}
+      onSelect={c=>{setSelCand(c);go('iv-form');}}/>
+  );
+
+  if(screen==='iv-form'&&selCand) return (
+    <IvFormScreen ivName={ivName} candidate={selCand}
+      onBack={()=>go('iv-candidates')}
+      onSubmit={async(data)=>{await saveSubmission(data);setSubmittedName(data.candidate_name);go('submitted');}}/>
+  );
+
+  if(screen==='submitted') return (
+    <div className="wrap" style={{textAlign:'center',paddingTop:'3rem'}}>
+      <i className="ti ti-circle-check" style={{fontSize:52,color:'#1D9E75',display:'block',marginBottom:'1rem'}}/>
+      <h2 style={{fontSize:22,fontWeight:500,marginBottom:8}}>제출 완료</h2>
+      <p style={{fontSize:13,color:'#888780',marginBottom:'2rem'}}>{submittedName} 님 평가가 성공적으로 제출됐어요.</p>
+      <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+        <button className="btn" onClick={()=>{setSelCand(null);go('iv-candidates');}}>다른 지원자 평가하기</button>
+        <button className="btn primary" onClick={()=>{setIvName('');go('home');}}>완료</button>
+      </div>
+    </div>
+  );
+  return null;
+}
+
+function AdminScreen({candidates,setCandidates,interviewers,setInterviewers,submissions,loading,loadAll,adminTab,setAdminTab,detailCand,setDetailCand,onExit}){
+  const [newCand,setNewCand]=useState({name:'',rank1:'',rank2:''});
+  const [newIv,setNewIv]=useState('');
+  const [saving,setSaving]=useState(false);
+
+  async function handleAddCand(){
+    if(!newCand.name.trim()||!newCand.rank1||!newCand.rank2) return alert('모든 항목을 입력해 주세요.');
+    setSaving(true);
+    await addCandidate(newCand);
+    const c=await getCandidates(); setCandidates(c);
+    setNewCand({name:'',rank1:'',rank2:''}); setSaving(false);
+  }
+  async function handleDelCand(id){
+    if(!confirm('삭제하면 해당 지원자의 제출 데이터도 함께 삭제됩니다. 계속할까요?')) return;
+    await delCandidate(id);
+    const c=await getCandidates(); setCandidates(c);
+  }
+  async function handleAddIv(){
+    if(!newIv.trim()) return;
+    setSaving(true);
+    await addInterviewer(newIv.trim());
+    const i=await getInterviewers(); setInterviewers(i);
+    setNewIv(''); setSaving(false);
+  }
+  async function handleDelIv(id){
+    await delInterviewer(id);
+    const i=await getInterviewers(); setInterviewers(i);
+  }
+
+  return (
+    <div className="wrap">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+        <h1 className="screen-title" style={{marginBottom:0}}>관리자 패널</h1>
+        <div style={{display:'flex',gap:6}}>
+          <button className="btn sm" onClick={loadAll}><i className="ti ti-refresh"/>새로고침</button>
+          <button className="btn sm" onClick={onExit}>나가기</button>
+        </div>
+      </div>
+      <div className="tab-bar">
+        {[['candidates','지원자 관리'],['interviewers','면접관 관리'],['results','결과 취합']].map(([t,l])=>(
+          <button key={t} className={`tab${adminTab===t?' active':''}`}
+            onClick={()=>{setAdminTab(t);setDetailCand(null);}}>{l}</button>
+        ))}
+      </div>
+
+      {adminTab==='candidates'&&<>
+        <div className="card">
+          <div className="card-head"><span className="card-head-title">지원자 추가</span></div>
+          <div style={{padding:'1rem 1.25rem'}}>
+            <div className="row" style={{marginBottom:8}}>
+              <input type="text" placeholder="지원자 성함" value={newCand.name} onChange={e=>setNewCand({...newCand,name:e.target.value})}/>
+            </div>
+            <div className="row2" style={{marginBottom:10}}>
+              <select value={newCand.rank1} onChange={e=>setNewCand({...newCand,rank1:e.target.value})}>
+                <option value="">1순위 직군</option>
+                {RANKS.map(r=><option key={r}>{r}</option>)}
+              </select>
+              <select value={newCand.rank2} onChange={e=>setNewCand({...newCand,rank2:e.target.value})}>
+                <option value="">2순위 직군</option>
+                {RANKS.map(r=><option key={r}>{r}</option>)}
+              </select>
+            </div>
+            <button className="btn primary" onClick={handleAddCand} disabled={saving} style={{width:'100%',justifyContent:'center'}}>
+              <i className="ti ti-plus"/> 지원자 추가
+            </button>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-head"><span className="card-head-title">지원자 목록</span><span className="card-sub">{candidates.length}명</span></div>
+          {candidates.length===0&&<div className="empty">등록된 지원자가 없습니다.</div>}
+          {candidates.map((c,i)=>{
+            const n=submissions.filter(s=>s.candidate_id===c.id).length;
+            return(
+              <div key={c.id} className="list-row" style={i===candidates.length-1?{borderBottom:'none'}:{}}>
+                <div>
+                  <p style={{fontWeight:500,fontSize:13}}>{c.name}</p>
+                  <p style={{fontSize:11,color:'#888780',marginTop:2}}>
+                    1순위 <span className="badge bt">{c.rank1}</span>{' '}
+                    2순위 <span className="badge bb">{c.rank2}</span>
+                  </p>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <span style={{fontSize:11,color:'#888780'}}>{n}명 제출</span>
+                  <button className="btn sm danger" onClick={()=>handleDelCand(c.id)}>삭제</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>}
+
+      {adminTab==='interviewers'&&<>
+        <div className="card">
+          <div className="card-head"><span className="card-head-title">면접관 추가</span></div>
+          <div style={{padding:'1rem 1.25rem',display:'flex',gap:8}}>
+            <input type="text" placeholder="성함 입력" value={newIv} onChange={e=>setNewIv(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&handleAddIv()} style={{flex:1}}/>
+            <button className="btn primary" onClick={handleAddIv} disabled={saving}>추가</button>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-head"><span className="card-head-title">면접관 목록</span><span className="card-sub">{interviewers.length}명</span></div>
+          {interviewers.length===0&&<div className="empty">등록된 면접관이 없습니다.</div>}
+          {interviewers.map((iv,i)=>(
+            <div key={iv.id} className="list-row" style={i===interviewers.length-1?{borderBottom:'none'}:{}}>
+              <p style={{fontSize:13,fontWeight:500}}>{iv.name}</p>
+              <button className="btn sm danger" onClick={()=>handleDelIv(iv.id)}>삭제</button>
+            </div>
+          ))}
+        </div>
+      </>}
+
+      {adminTab==='results'&&!detailCand&&(
+        <ResultsList candidates={candidates} submissions={submissions} onSelect={setDetailCand}/>
+      )}
+      {adminTab==='results'&&detailCand&&(
+        <ResultDetail candidate={detailCand}
+          submissions={submissions.filter(s=>s.candidate_id===detailCand.id)}
+          onBack={()=>setDetailCand(null)}/>
+      )}
+    </div>
+  );
+}
+
+function ResultsList({candidates,submissions,onSelect}){
+  const [sortBy,setSortBy]=useState('total');
+  const rows=candidates.map(c=>{
+    const subs=submissions.filter(s=>s.candidate_id===c.id);
+    const avg=subs.length>0?Math.round(subs.reduce((a,s)=>a+s.total,0)/subs.length):null;
+    return{...c,subs,avg};
+  }).sort((a,b)=>sortBy==='name'?a.name.localeCompare(b.name):(b.avg??-1)-(a.avg??-1));
+
+  return(<>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+      <span style={{fontSize:12,color:'#888780'}}>클릭하면 상세 결과를 볼 수 있어요</span>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        <span style={{fontSize:11,color:'#888780'}}>정렬:</span>
+        {[['total','총점'],['name','이름']].map(([k,l])=>(
+          <button key={k} className={`btn sm${sortBy===k?' primary':''}`} onClick={()=>setSortBy(k)}>{l}</button>
+        ))}
+      </div>
+    </div>
+    <div className="card">
+      <div className="card-head"><span className="card-head-title">지원자별 결과 요약</span><span className="card-sub">면접관 평균 기준</span></div>
+      {rows.length===0&&<div className="empty">등록된 지원자가 없습니다.</div>}
+      {rows.map((c,i)=>(
+        <div key={c.id} className="list-row" onClick={()=>onSelect(c)}
+          style={{cursor:'pointer',borderBottom:i<rows.length-1?undefined:'none'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+              {sortBy==='total'&&c.avg!==null&&<span style={{fontSize:13,fontWeight:700,color:'#888780',minWidth:20}}>{i+1}</span>}
+              <p style={{fontWeight:500,fontSize:14}}>{c.name}</p>
+            </div>
+            <p style={{fontSize:11,color:'#888780'}}>
+              1순위 <span className="badge bt">{c.rank1}</span>{' '}
+              2순위 <span className="badge bb">{c.rank2}</span>{' '}
+              · {c.subs.length}명 제출
+            </p>
+          </div>
+          <div style={{textAlign:'right'}}>
+            {c.avg!==null
+              ?<><p style={{fontSize:26,fontWeight:700,color:scoreColor(c.avg)}}>{c.avg}</p><p style={{fontSize:10,color:'#888780'}}>평균 / 100점</p></>
+              :<p style={{fontSize:12,color:'#b4b2a9'}}>미제출</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  </>);
+}
+
+function ResultDetail({candidate,submissions,onBack}){
+  const avg=submissions.length>0?Math.round(submissions.reduce((a,s)=>a+s.total,0)/submissions.length):null;
+  return(
+    <div>
+      <button className="back-btn" onClick={onBack}><i className="ti ti-arrow-left"/> 목록으로</button>
+      <div className="card">
+        <div className="card-head">
+          <span className="card-head-title">{candidate.name} 상세 결과</span>
+          <span className="card-sub">1순위 {candidate.rank1} · 2순위 {candidate.rank2}</span>
+        </div>
+        {submissions.length===0&&<div className="empty">제출된 평가가 없습니다.</div>}
+        {submissions.map((s,i)=>(
+          <div key={s.id} style={{padding:'.875rem 1.25rem',borderBottom:i<submissions.length-1?'1px solid #e0ddd5':'none'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+              <p style={{fontWeight:500,fontSize:14}}>{s.interviewer_name}</p>
+              <div style={{textAlign:'right'}}>
+                <p style={{fontSize:22,fontWeight:700,color:scoreColor(s.total)}}>{s.total}점</p>
+                <p style={{fontSize:10,color:'#888780'}}>{new Date(s.submitted_at).toLocaleString('ko-KR')}</p>
+              </div>
+            </div>
+            <div className="stat-grid" style={{marginBottom:8}}>
+              {[['공통역량',s.comp_total,20],['직무역량',s.jikmu_total,30],['업적/역량평가',s.damyeon,50]].map(([l,val,mx])=>(
+                <div key={l} className="stat-card">
+                  <p className="stat-lbl">{l}</p>
+                  <p className="stat-val">{val??0}<span style={{fontSize:11,color:'#888780',fontWeight:400}}>/{mx}</span></p>
+                </div>
+              ))}
+            </div>
+            {s.memo&&<p style={{fontSize:11,color:'#888780',marginBottom:4}}><strong>메모:</strong> {s.memo}</p>}
+            {s.comment&&<p style={{fontSize:12,color:'#1a1a18',background:'#f9f8f4',padding:'6px 10px',borderRadius:6,borderLeft:'3px solid #1D9E75'}}>{s.comment}</p>}
+          </div>
+        ))}
+        {submissions.length>0&&(
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.875rem 1.25rem',background:'#f9f8f4',borderTop:'1px solid #e0ddd5'}}>
+            <p style={{fontSize:13,fontWeight:500}}>면접관 평균 총점 ({submissions.length}명)</p>
+            <p style={{fontSize:28,fontWeight:700,color:scoreColor(avg)}}>{avg}점</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function IvCandidatesScreen({ivName,candidates,submissions,loading,loadAll,onBack,onSelect}){
+  return(
+    <div className="wrap" style={{maxWidth:480,margin:'0 auto'}}>
+      <button className="back-btn" onClick={onBack}><i className="ti ti-arrow-left"/> 뒤로</button>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1rem'}}>
+        <div>
+          <h2 className="screen-title" style={{marginBottom:2}}>지원자 선택</h2>
+          <p style={{fontSize:12,color:'#888780'}}>면접관: {ivName}</p>
+        </div>
+        <button className="btn sm" onClick={loadAll}><i className="ti ti-refresh"/></button>
+      </div>
+      {loading&&<div className="loading">불러오는 중...</div>}
+      {!loading&&candidates.length===0&&<div className="empty">등록된 지원자가 없습니다.</div>}
+      {candidates.map(c=>{
+        const done=submissions.some(s=>s.candidate_id===c.id&&s.interviewer_name===ivName);
+        return(
+          <button key={c.id} className={`cand-btn${done?' done':''}`} onClick={()=>!done&&onSelect(c)}>
+            <div>
+              <p style={{fontSize:14,fontWeight:500,color:'#1a1a18',marginBottom:3}}>{c.name}</p>
+              <p style={{fontSize:11,color:'#888780'}}>1순위 {c.rank1} · 2순위 {c.rank2}</p>
+            </div>
+            {done
+              ?<span style={{fontSize:11,color:'#1D9E75',fontWeight:500,display:'flex',alignItems:'center',gap:4}}><i className="ti ti-check"/>제출 완료</span>
+              :<i className="ti ti-arrow-right" style={{color:'#b4b2a9'}}/>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function IvFormScreen({ivName,candidate,onBack,onSubmit}){
+  const [scores,setScores]=useState({c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''});
+  const [memo,setMemo]=useState('');
+  const [comment,setComment]=useState('');
+  const [submitting,setSubmitting]=useState(false);
+
+  function setScore(k,max,val){
+    if(val===''){setScores(p=>({...p,[k]:''}));return;}
+    let n=parseInt(val);
+    if(isNaN(n))return;
+    if(n<0)n=0; if(n>max)n=max;
+    setScores(p=>({...p,[k]:String(n)}));
+  }
+
+  const compTotal=COMPS.reduce((s,c)=>s+vn(scores[c.id]),0);
+  const jTotal=vn(scores.jikmu);
+  const dam=vn(scores.dam);
+  const grand=compTotal+jTotal+dam;
+
+  async function handleSubmit(){
+    setSubmitting(true);
+    await onSubmit({
+      candidate_id:candidate.id, candidate_name:candidate.name,
+      rank1:candidate.rank1, rank2:candidate.rank2,
+      interviewer_name:ivName,
+      c1:vn(scores.c1),c2:vn(scores.c2),c3:vn(scores.c3),c4:vn(scores.c4),
+      comp_total:compTotal, jikmu_total:jTotal, damyeon:dam, total:grand,
+      memo, comment,
+    });
+    setSubmitting(false);
+  }
+
+  return(
+    <div className="wrap">
+      <button className="back-btn" onClick={onBack}><i className="ti ti-arrow-left"/> 뒤로</button>
+
+      <div className="info-grid">
+        <div className="info-card">
+          <p className="info-card-title">면접관 정보</p>
+          <p style={{fontWeight:500,fontSize:14}}>{ivName}</p>
+        </div>
+        <div className="info-card">
+          <p className="info-card-title">지원자 정보</p>
+          <p style={{fontWeight:500,fontSize:14}}>{candidate.name}</p>
+          <p style={{fontSize:11,color:'#888780',marginTop:2}}>1순위 {candidate.rank1} · 2순위 {candidate.rank2}</p>
+        </div>
+      </div>
+
+      {/* 공통역량 */}
+      <div className="card">
+        <div className="card-head">
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="badge bt">공통역량</span>
+            <span className="card-head-title">공통 역량 평가</span>
+          </div>
+          <span className="card-sub">항목당 5점 · 총 20점</span>
+        </div>
+        {COMPS.map((comp,i)=>(
+          <div key={comp.id} className="comp-row" style={i===COMPS.length-1?{borderBottom:'none'}:{}}>
+            <div className="comp-content">
+              <p className="comp-name">{comp.name}</p>
+              <p className="comp-desc">{comp.desc}</p>
+              <ul className="checks">{comp.checks.map((c,j)=><li key={j}>{c}</li>)}</ul>
+            </div>
+            <div className="score-cell">
+              <span className="score-lbl">점수 /5</span>
+              <input type="number" className="sinp" value={scores[comp.id]} placeholder="0"
+                onChange={e=>setScore(comp.id,5,e.target.value)}/>
+            </div>
+          </div>
+        ))}
+        <div className="subtotal">
+          <span style={{fontSize:11,color:'#888780'}}>공통역량 소계</span>
+          <span className="stval" style={{color:'#1D9E75'}}>{compTotal}</span>
+          <span className="stmax">/ 20점</span>
+        </div>
+      </div>
+
+      {/* 직무역량 */}
+      <div className="card">
+        <div className="card-head">
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="badge bb">직무역량</span>
+            <span className="card-head-title">직무 역량 평가</span>
+          </div>
+          <span className="card-sub">총 30점</span>
+        </div>
+        <div style={{padding:'1rem 1.25rem'}}>
+          <p className="jnote">1·2순위 직군 역량을 종합적으로 평가하여 30점 이내에서 채점해 주세요. 1·2순위별 가중평균은 실무자가 별도 산출합니다.</p>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:'1rem'}}>
+            <input type="number" className="jbig" value={scores.jikmu} placeholder="0"
+              onChange={e=>setScore('jikmu',30,e.target.value)}/>
+            <span style={{fontSize:15,fontWeight:500,color:'#444'}}>/ 30점</span>
+          </div>
+          <p className="at">채점 기준 참고표</p>
+          <table className="anchor-tbl">
+            <thead><tr><th style={{width:110}}>점수 구간</th><th>수준 설명</th></tr></thead>
+            <tbody>
+              <tr><td><span className="pill ph">23–30점</span></td><td>직무 전문성이 탁월하고, 전환 후 즉시 기여 가능한 수준</td></tr>
+              <tr><td><span className="pill pm">15–22점</span></td><td>역량이 충분하며, 단기 적응 이후 성과 창출이 가능한 수준</td></tr>
+              <tr><td><span className="pill pl">7–14점</span></td><td>기본기는 있으나 추가 역량 개발이 필요한 수준</td></tr>
+              <tr><td><span className="pill pp">7점 미만</span></td><td>직무 적합성이 낮으며 성과 창출이 어려울 것으로 판단</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="subtotal">
+          <span style={{fontSize:11,color:'#888780'}}>직무역량 소계</span>
+          <span className="stval" style={{color:'#378ADD'}}>{jTotal}</span>
+          <span className="stmax">/ 30점</span>
+        </div>
+      </div>
+
+      {/* 업적/역량평가 */}
+      <div className="card">
+        <div className="card-head">
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="badge ba">업적/역량평가</span>
+            <span className="card-head-title">업적/역량평가</span>
+          </div>
+          <span className="card-sub">50점</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 80px'}}>
+          <div style={{padding:'.875rem 1.25rem'}}>
+            <p style={{fontSize:11,color:'#888780'}}>피플팀에서 별도 제공 · 아래에 제공받은 점수를 입력해 주세요</p>
+            <div style={{display:'flex',gap:5,marginTop:8}}>
+              {['2023년','2024년','2025년'].map(y=><span key={y} className="pill pl">{y}</span>)}
+            </div>
+          </div>
+          <div className="score-cell">
+            <span className="score-lbl">점수 /50</span>
+            <input type="number" className="sinp" value={scores.dam} placeholder="0"
+              onChange={e=>setScore('dam',50,e.target.value)}/>
+          </div>
+        </div>
+        <div className="note-sec">
+          <p className="note-lbl">특이사항 / 면접 메모 <span className="note-badge">면접 중 단편 기록</span></p>
+          <textarea className="nb" rows={3} placeholder="면접 중 특이사항, 인상적인 답변 등을 간략히 기록해 주세요"
+            value={memo} onChange={e=>setMemo(e.target.value)}/>
+        </div>
+        <div className="note-sec">
+          <p className="note-lbl">최종평가 코멘트 <span className="cbadge">종합 의견</span></p>
+          <textarea className="cb" rows={4} placeholder="면접 후 종합적인 평가 의견, 합격·불합격 추천 여부 및 근거를 기재해 주세요"
+            value={comment} onChange={e=>setComment(e.target.value)}/>
+        </div>
+      </div>
+
+      {/* 총합 */}
+      <div className="total-bar">
+        <div>
+          <p style={{fontSize:14,fontWeight:500}}>최종 총합</p>
+          <p style={{fontSize:10,color:'#888780',marginTop:2}}>공통역량 20 + 직무역량 30 + 업적/역량평가 50</p>
+        </div>
+        <div style={{display:'flex',alignItems:'baseline',gap:6}}>
+          <span className="total-score" style={{color:scoreColor(grand)}}>{grand}</span>
+          <span style={{fontSize:16,fontWeight:500,color:'#444441'}}>/100점</span>
+        </div>
+      </div>
+
+      <button className="btn primary" style={{width:'100%',justifyContent:'center',padding:'14px',fontSize:15}}
+        onClick={handleSubmit} disabled={submitting}>
+        {submitting?'저장 중...':'평가 제출하기'}
+      </button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
