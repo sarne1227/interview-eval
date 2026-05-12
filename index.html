@@ -495,17 +495,32 @@ function IvCandidatesScreen({ivName,candidates,submissions,loading,loadAll,onBac
 }
 
 function IvFormScreen({ivName,candidate,onBack,onSubmit}){
-  const [scores,setScores]=useState({c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''});
-  const [memo,setMemo]=useState('');
-  const [comment,setComment]=useState('');
+  const storageKey = ivName + '_' + candidate.id;
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){ return {}; } })();
+  const [scores,setScores]=useState(saved.scores||{c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''});
+  const [memo,setMemo]=useState(saved.memo||'');
+  const [comment,setComment]=useState(saved.comment||'');
   const [submitting,setSubmitting]=useState(false);
+  const [savedMsg,setSavedMsg]=useState('');
+
+  function save(newScores, newMemo, newComment){
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({scores:newScores, memo:newMemo, comment:newComment}));
+      setSavedMsg('임시저장됨');
+      setTimeout(()=>setSavedMsg(''), 2000);
+    } catch(e){}
+  }
 
   function setScore(k,max,val){
-    if(val===''){setScores(p=>({...p,[k]:''}));return;}
+    if(val===''){
+      const ns={...scores,[k]:''};
+      setScores(ns); save(ns,memo,comment); return;
+    }
     let n=parseInt(val);
     if(isNaN(n))return;
     if(n<0)n=0; if(n>max)n=max;
-    setScores(p=>({...p,[k]:String(n)}));
+    const ns={...scores,[k]:String(n)};
+    setScores(ns); save(ns,memo,comment);
   }
 
   const compTotal=COMPS.reduce((s,c)=>s+vn(scores[c.id]),0);
@@ -515,6 +530,7 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
 
   async function handleSubmit(){
     setSubmitting(true);
+    try { localStorage.removeItem(storageKey); } catch(e){}
     await onSubmit({
       candidate_id:candidate.id, candidate_name:candidate.name,
       rank1:candidate.rank1, rank2:candidate.rank2,
@@ -631,12 +647,12 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
         <div className="note-sec">
           <p className="note-lbl">특이사항 / 면접 메모 <span className="note-badge">면접 중 단편 기록</span></p>
           <textarea className="nb" rows={3} placeholder="면접 중 특이사항, 인상적인 답변 등을 간략히 기록해 주세요"
-            value={memo} onChange={e=>setMemo(e.target.value)}/>
+            value={memo} onChange={e=>{setMemo(e.target.value);save(scores,e.target.value,comment);}}/>
         </div>
         <div className="note-sec">
           <p className="note-lbl">최종평가 코멘트 <span className="cbadge">종합 의견</span></p>
           <textarea className="cb" rows={4} placeholder="면접 후 종합적인 평가 의견, 합격·불합격 추천 여부 및 근거를 기재해 주세요"
-            value={comment} onChange={e=>setComment(e.target.value)}/>
+            value={comment} onChange={e=>{setComment(e.target.value);save(scores,memo,e.target.value);}}/>
         </div>
       </div>
 
@@ -652,6 +668,7 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
         </div>
       </div>
 
+      <div style={{textAlign:'center',marginBottom:8,fontSize:12,color:'#1D9E75',height:18}}>{savedMsg}</div>
       <button className="btn primary" style={{width:'100%',justifyContent:'center',padding:'14px',fontSize:15}}
         onClick={handleSubmit} disabled={submitting}>
         {submitting?'저장 중...':'평가 제출하기'}
