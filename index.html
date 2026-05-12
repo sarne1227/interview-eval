@@ -495,20 +495,43 @@ function IvCandidatesScreen({ivName,candidates,submissions,loading,loadAll,onBac
 }
 
 function IvFormScreen({ivName,candidate,onBack,onSubmit}){
-  const storageKey = ivName + '_' + candidate.id;
-  const saved = (() => { try { return JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){ return {}; } })();
-  const [scores,setScores]=useState(saved.scores||{c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''});
-  const [memo,setMemo]=useState(saved.memo||'');
-  const [comment,setComment]=useState(saved.comment||'');
+  const [scores,setScores]=useState({c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''});
+  const [memo,setMemo]=useState('');
+  const [comment,setComment]=useState('');
   const [submitting,setSubmitting]=useState(false);
   const [savedMsg,setSavedMsg]=useState('');
+  const [draftLoaded,setDraftLoaded]=useState(false);
 
-  function save(newScores, newMemo, newComment){
+  useEffect(()=>{
+    async function loadDraft(){
+      try {
+        const {data} = await db.from('drafts').select('data').eq('candidate_id', candidate.id).eq('interviewer_name', ivName);
+        if(data && data.length > 0 && data[0].data){
+          const d = data[0].data;
+          if(d.scores) setScores(d.scores);
+          if(d.memo) setMemo(d.memo);
+          if(d.comment) setComment(d.comment);
+          setSavedMsg('임시저장된 내용 불러옴 ✓');
+          setTimeout(()=>setSavedMsg(''), 3000);
+        }
+      } catch(e){}
+      setDraftLoaded(true);
+    }
+    loadDraft();
+  },[]);
+
+  async function save(newScores, newMemo, newComment){
     try {
-      localStorage.setItem(storageKey, JSON.stringify({scores:newScores, memo:newMemo, comment:newComment}));
-      setSavedMsg('임시저장됨');
+      const data = {scores:newScores, memo:newMemo, comment:newComment};
+      const existing = await db.from('drafts').select('id').eq('candidate_id', candidate.id).eq('interviewer_name', ivName);
+      if(existing.data && existing.data.length > 0){
+        await db.from('drafts').update({data, updated_at: new Date().toISOString()}).eq('id', existing.data[0].id);
+      } else {
+        await db.from('drafts').insert({candidate_id: candidate.id, interviewer_name: ivName, data});
+      }
+      setSavedMsg('임시저장됨 ✓');
       setTimeout(()=>setSavedMsg(''), 2000);
-    } catch(e){}
+    } catch(e){ console.error(e); }
   }
 
   function setScore(k,max,val){
@@ -530,7 +553,7 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
 
   async function handleSubmit(){
     setSubmitting(true);
-    try { localStorage.removeItem(storageKey); } catch(e){}
+    try { await db.from('drafts').delete().eq('candidate_id', candidate.id).eq('interviewer_name', ivName); } catch(e){}
     await onSubmit({
       candidate_id:candidate.id, candidate_name:candidate.name,
       rank1:candidate.rank1, rank2:candidate.rank2,
