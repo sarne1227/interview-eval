@@ -136,6 +136,11 @@ async function delCandidate(id){ await db.from('candidates').delete().eq('id',id
 async function addInterviewer(name){ await db.from('interviewers').insert({name}); }
 async function delInterviewer(id){ await db.from('interviewers').delete().eq('id',id); }
 async function saveSubmission(s){ await db.from('submissions').insert(s); }
+async function updateSubmission(id, s){ await db.from('submissions').update(s).eq('id', id); }
+async function getSubmissionById(candidateId, interviewerName){
+  const {data} = await db.from('submissions').select('*').eq('candidate_id', candidateId).eq('interviewer_name', interviewerName);
+  return data && data.length > 0 ? data[0] : null;
+}
 
 function App(){
   const [screen,setScreen]=useState('home');
@@ -145,6 +150,7 @@ function App(){
   const [loading,setLoading]=useState(false);
   const [ivName,setIvName]=useState('');
   const [selCand,setSelCand]=useState(null);
+  const [editSub,setEditSub]=useState(null);
   const [adminCode,setAdminCode]=useState('');
   const [adminTab,setAdminTab]=useState('candidates');
   const [detailCand,setDetailCand]=useState(null);
@@ -227,13 +233,25 @@ function App(){
   if(screen==='iv-candidates') return (
     <IvCandidatesScreen ivName={ivName} candidates={candidates} submissions={submissions}
       loading={loading} loadAll={loadAll} onBack={()=>go('iv-select')}
-      onSelect={c=>{setSelCand(c);go('iv-form');}}/>
+      onSelect={c=>{setSelCand(c);setEditSub(null);go('iv-form');}}
+      onEdit={async(c)=>{
+        const sub = await getSubmissionById(c.id, ivName);
+        setSelCand(c); setEditSub(sub); go('iv-form');
+      }}/>
   );
 
   if(screen==='iv-form'&&selCand) return (
-    <IvFormScreen ivName={ivName} candidate={selCand}
+    <IvFormScreen ivName={ivName} candidate={selCand} editSub={editSub}
       onBack={()=>go('iv-candidates')}
-      onSubmit={async(data)=>{await saveSubmission(data);setSubmittedName(data.candidate_name);go('submitted');}}/>
+      onSubmit={async(data)=>{
+        if(editSub){
+          await updateSubmission(editSub.id, data);
+        } else {
+          await saveSubmission(data);
+        }
+        setSubmittedName(data.candidate_name);
+        go('submitted');
+      }}/>
   );
 
   if(screen==='submitted') return (
@@ -463,7 +481,7 @@ function ResultDetail({candidate,submissions,onBack}){
   );
 }
 
-function IvCandidatesScreen({ivName,candidates,submissions,loading,loadAll,onBack,onSelect}){
+function IvCandidatesScreen({ivName,candidates,submissions,loading,loadAll,onBack,onSelect,onEdit}){
   return(
     <div className="wrap" style={{maxWidth:480,margin:'0 auto'}}>
       <button className="back-btn" onClick={onBack}><i className="ti ti-arrow-left"/> 뒤로</button>
@@ -479,25 +497,38 @@ function IvCandidatesScreen({ivName,candidates,submissions,loading,loadAll,onBac
       {candidates.map(c=>{
         const done=submissions.some(s=>s.candidate_id===c.id&&s.interviewer_name===ivName);
         return(
-          <button key={c.id} className={`cand-btn${done?' done':''}`} onClick={()=>!done&&onSelect(c)}>
-            <div>
-              <p style={{fontSize:14,fontWeight:500,color:'#1a1a18',marginBottom:3}}>{c.name}</p>
-              <p style={{fontSize:11,color:'#888780'}}>1순위 {c.rank1} · 2순위 {c.rank2}</p>
+          <div key={c.id} style={{marginBottom:8}}>
+            <div className={`cand-btn${done?' done':''}`} style={{cursor:done?'default':'pointer',marginBottom:0}}
+              onClick={()=>!done&&onSelect(c)}>
+              <div>
+                <p style={{fontSize:14,fontWeight:500,color:'#1a1a18',marginBottom:3}}>{c.name}</p>
+                <p style={{fontSize:11,color:'#888780'}}>1순위 {c.rank1} · 2순위 {c.rank2}</p>
+              </div>
+              {done
+                ?<div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontSize:11,color:'#1D9E75',fontWeight:500,display:'flex',alignItems:'center',gap:4}}><i className="ti ti-check"/>제출 완료</span>
+                  <button onClick={e=>{e.stopPropagation();onEdit(c);}}
+                    style={{fontSize:11,padding:'3px 10px',borderRadius:6,border:'1px solid #d3d1c7',background:'#fff',cursor:'pointer',fontFamily:'inherit',color:'#444'}}>
+                    수정하기
+                  </button>
+                </div>
+                :<i className="ti ti-arrow-right" style={{color:'#b4b2a9'}}/>}
             </div>
-            {done
-              ?<span style={{fontSize:11,color:'#1D9E75',fontWeight:500,display:'flex',alignItems:'center',gap:4}}><i className="ti ti-check"/>제출 완료</span>
-              :<i className="ti ti-arrow-right" style={{color:'#b4b2a9'}}/>}
-          </button>
+          </div>
         );
       })}
     </div>
   );
 }
 
-function IvFormScreen({ivName,candidate,onBack,onSubmit}){
-  const [scores,setScores]=useState({c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''});
-  const [memo,setMemo]=useState('');
-  const [comment,setComment]=useState('');
+function IvFormScreen({ivName,candidate,editSub,onBack,onSubmit}){
+  const initScores = editSub ? {
+    c1:String(editSub.c1||''), c2:String(editSub.c2||''), c3:String(editSub.c3||''), c4:String(editSub.c4||''),
+    jikmu:String(editSub.jikmu_total||''), dam:String(editSub.damyeon||'')
+  } : {c1:'',c2:'',c3:'',c4:'',jikmu:'',dam:''};
+  const [scores,setScores]=useState(initScores);
+  const [memo,setMemo]=useState(editSub?.memo||'');
+  const [comment,setComment]=useState(editSub?.comment||'');
   const [submitting,setSubmitting]=useState(false);
   const [savedMsg,setSavedMsg]=useState('');
   const [draftLoaded,setDraftLoaded]=useState(false);
@@ -520,7 +551,9 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
     loadDraft();
   },[]);
 
-  async function save(newScores, newMemo, newComment){
+  const saveTimerRef = React.useRef(null);
+
+  async function doSave(newScores, newMemo, newComment){
     try {
       const data = {scores:newScores, memo:newMemo, comment:newComment};
       const existing = await db.from('drafts').select('id').eq('candidate_id', candidate.id).eq('interviewer_name', ivName);
@@ -532,6 +565,13 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
       setSavedMsg('임시저장됨 ✓');
       setTimeout(()=>setSavedMsg(''), 2000);
     } catch(e){ console.error(e); }
+  }
+
+  function save(newScores, newMemo, newComment){
+    if(saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(()=>{
+      doSave(newScores, newMemo, newComment);
+    }, 800);
   }
 
   function setScore(k,max,val){
@@ -694,7 +734,7 @@ function IvFormScreen({ivName,candidate,onBack,onSubmit}){
       <div style={{textAlign:'center',marginBottom:8,fontSize:12,color:'#1D9E75',height:18}}>{savedMsg}</div>
       <button className="btn primary" style={{width:'100%',justifyContent:'center',padding:'14px',fontSize:15}}
         onClick={handleSubmit} disabled={submitting}>
-        {submitting?'저장 중...':'평가 제출하기'}
+        {submitting?'저장 중...':(editSub?'수정 저장하기':'평가 제출하기')}
       </button>
     </div>
   );
