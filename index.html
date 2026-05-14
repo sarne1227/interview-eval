@@ -436,35 +436,6 @@ function ResultsList({candidates,submissions,onSelect}){
     return{...c,subs,avg};
   }).sort((a,b)=>sortBy==='name'?a.name.localeCompare(b.name):(b.avg??-1)-(a.avg??-1));
 
- else {
-        c.subs.forEach(s=>{
-          const row = [
-            c.name, c.rank1, c.rank2,
-            s.interviewer_name||'',
-            s.comp_total??0,
-            s.jikmu_total??0,
-            s.damyeon??0,
-            s.total??0,
-            s.submitted_at ? new Date(s.submitted_at).toLocaleString('ko-KR') : '',
-            '"'+(s.memo||'').replace(/"/g,'""')+'"',
-            '"'+(s.comment||'').replace(/"/g,'""')+'"',
-          ];
-          csvRows.push(row.join(','));
-        });
-        if(c.subs.length>1){
-          const avgRow = [c.name, c.rank1, c.rank2, '★평균','','','',c.avg,'','',''];
-          csvRows.push(avgRow.join(','));
-        }
-      }
-    });
-    const blob = new Blob([csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '면접결과_' + new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','') + '.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
 
   return(<>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
