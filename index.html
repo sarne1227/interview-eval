@@ -445,6 +445,9 @@ function ResultsList({candidates,submissions,onSelect}){
         {[['total','총점'],['name','이름']].map(([k,l])=>(
           <button key={k} className={`btn sm${sortBy===k?' primary':''}`} onClick={()=>setSortBy(k)}>{l}</button>
         ))}
+        <button className="btn sm" onClick={()=>downloadPDF('result-list','면접결과요약')} style={{background:'#E6F1FB',color:'#185FA5',border:'none'}}>
+          <i className="ti ti-file-type-pdf"/> PDF 저장
+        </button>
       </div>
     </div>
     <div className="card">
