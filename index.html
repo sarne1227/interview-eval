@@ -105,6 +105,7 @@ const SUPABASE_URL = 'https://wcjlwjfucbcvamtioecx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indjamx3amZ1Y2JjdmFtdGlvZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzAwNzQsImV4cCI6MjA5MzcwNjA3NH0.gcIeOI0eFfnmxJfjg0k3zXJE-KDUGEElyD1opehzH8Q';
 const ADMIN_CODE   = '2025';
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -114,6 +115,41 @@ const ADMIN_CODE   = '2025';
 const { useState, useEffect, useCallback } = React;
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const RANKS = ['마케팅','경영지원','옹호사업','국내사업'];
+
+const IV_DEPT = {
+  '김세연': ['마케팅'],
+  '나윤철': ['마케팅'],
+  '남상은': ['옹호사업'],
+  '김순이': ['국내사업'],
+  '임혜진': ['경영지원'],
+  '변지영': ['마케팅','옹호사업','국내사업','경영지원'],
+};
+
+function getGroupSubs(subs, dept){
+  return subs.filter(s=>{
+    const depts = IV_DEPT[s.interviewer_name]||[];
+    return depts.includes(dept);
+  });
+}
+
+function calcAvg(arr, key){
+  const valid = arr.filter(s=>s[key]!=null);
+  if(!valid.length) return null;
+  return Math.round(valid.reduce((a,s)=>a+(s[key]||0),0)/valid.length*10)/10;
+}
+
+function downloadPDF(elementId, filename){
+  const el = document.getElementById(elementId);
+  if(!el){ alert('출력할 내용을 찾을 수 없습니다.'); return; }
+  const opt = {
+    margin: 8,
+    filename: filename+'.pdf',
+    image: { type:'jpeg', quality:0.98 },
+    html2canvas: { scale:2, useCORS:true },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  };
+  html2pdf().set(opt).from(el).save();
+}
 const COMPS = [
   { id:'c1', name:'1. 자기주도적 학습 및 변화 수용성', desc:'새로운 업무·환경 변화에 스스로 학습하고 적극적으로 적응하며 성장하려는 태도와 역량',
     checks:['새 직무를 위해 사전에 스스로 학습하거나 준비한 경험이 있는가?','생소한 업무를 빠르게 익혀 성과를 낸 경험이 있는가?','새로운 환경·업무 변화에 유연하게 적응한 경험이 있는가?','단순한 흥미를 넘어 직무가 성장과 조직 기여에 왜 필요한지 설명할 수 있는가?']},
@@ -400,6 +436,44 @@ function ResultsList({candidates,submissions,onSelect}){
     return{...c,subs,avg};
   }).sort((a,b)=>sortBy==='name'?a.name.localeCompare(b.name):(b.avg??-1)-(a.avg??-1));
 
+  function downloadCSV(){
+    const headers = ['지원자','1순위','2순위','면접관','공통역량','직무역량','업적/역량평가','총점','제출시간','메모','최종평가코멘트'];
+    const csvRows = [headers.join(',')];
+    rows.forEach(c=>{
+      if(c.subs.length===0){
+        csvRows.push([c.name, c.rank1, c.rank2, '미제출','','','','','','',''].join(','));
+      } else {
+        c.subs.forEach(s=>{
+          const row = [
+            c.name, c.rank1, c.rank2,
+            s.interviewer_name||'',
+            s.comp_total??0,
+            s.jikmu_total??0,
+            s.damyeon??0,
+            s.total??0,
+            s.submitted_at ? new Date(s.submitted_at).toLocaleString('ko-KR') : '',
+            '"'+(s.memo||'').replace(/"/g,'""')+'"',
+            '"'+(s.comment||'').replace(/"/g,'""')+'"',
+          ];
+          csvRows.push(row.join(','));
+        });
+        if(c.subs.length>1){
+          const avgRow = [c.name, c.rank1, c.rank2, '★평균','','','',c.avg,'','',''];
+          csvRows.push(avgRow.join(','));
+        }
+      }
+    });
+    const BOM = '﻿';
+    const blob = new Blob([BOM + csvRows.join('
+')], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '면접결과_' + new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','') + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return(<>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
       <span style={{fontSize:12,color:'#888780'}}>클릭하면 상세 결과를 볼 수 있어요</span>
@@ -408,6 +482,9 @@ function ResultsList({candidates,submissions,onSelect}){
         {[['total','총점'],['name','이름']].map(([k,l])=>(
           <button key={k} className={`btn sm${sortBy===k?' primary':''}`} onClick={()=>setSortBy(k)}>{l}</button>
         ))}
+        <button className="btn sm" onClick={downloadCSV} style={{background:'#1D9E75',color:'#fff',border:'none'}}>
+          <i className="ti ti-download"/> 엑셀 다운로드
+        </button>
       </div>
     </div>
     <div className="card">
@@ -438,44 +515,86 @@ function ResultsList({candidates,submissions,onSelect}){
   </>);
 }
 
-function ResultDetail({candidate,submissions,onBack}){
-  const avg=submissions.length>0?Math.round(submissions.reduce((a,s)=>a+s.total,0)/submissions.length):null;
+function SubGroup({title, badge, subs, dept}){
+  if(subs.length===0) return <div style={{padding:'.75rem 1.25rem',fontSize:12,color:'#888780'}}>해당 면접관 데이터 없음</div>;
+  const avgComp=calcAvg(subs,'comp_total');
+  const avgJikmu=calcAvg(subs,'jikmu_total');
+  const avgDam=calcAvg(subs,'damyeon');
+  const avgTotal=calcAvg(subs,'total');
   return(
     <div>
-      <button className="back-btn" onClick={onBack}><i className="ti ti-arrow-left"/> 목록으로</button>
-      <div className="card">
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'.6rem 1.25rem',background:'#f9f8f4',borderTop:'1px solid #e0ddd5',borderBottom:'1px solid #e0ddd5'}}>
+        <span className={`badge ${badge}`}>{dept}</span>
+        <span style={{fontSize:12,fontWeight:500}}>{title}</span>
+      </div>
+      {subs.map((s,i)=>(
+        <div key={s.id} style={{padding:'.75rem 1.25rem',borderBottom:'1px solid #e0ddd5'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <p style={{fontWeight:500,fontSize:13}}>{s.interviewer_name}</p>
+            <p style={{fontSize:18,fontWeight:700,color:scoreColor(s.total)}}>{s.total}점</p>
+          </div>
+          <div className="stat-grid" style={{marginBottom:6}}>
+            {[['공통역량',s.comp_total,20],['직무역량',s.jikmu_total,30],['업적/역량평가',s.damyeon,50]].map(([l,val,mx])=>(
+              <div key={l} className="stat-card">
+                <p className="stat-lbl">{l}</p>
+                <p className="stat-val">{val??0}<span style={{fontSize:10,color:'#888780',fontWeight:400}}>/{mx}</span></p>
+              </div>
+            ))}
+          </div>
+          {s.memo&&<p style={{fontSize:11,color:'#888780',marginBottom:4}}><i className="ti ti-notes" style={{marginRight:4}}/>{s.memo}</p>}
+          {s.comment&&<p style={{fontSize:11,color:'#1a1a18',background:'#f9f8f4',padding:'6px 10px',borderRadius:6,borderLeft:'3px solid #1D9E75',lineHeight:1.6}}>{s.comment}</p>}
+          <p style={{fontSize:10,color:'#b4b2a9',marginTop:4,textAlign:'right'}}>{s.submitted_at?new Date(s.submitted_at).toLocaleString('ko-KR'):''}</p>
+        </div>
+      ))}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.6rem 1.25rem',background:'#f4f3ef',borderTop:'1px solid #e0ddd5'}}>
+        <span style={{fontSize:11,color:'#888780'}}>그룹 평균 · {subs.length}명</span>
+        <div style={{display:'flex',gap:12,alignItems:'center'}}>
+          <span style={{fontSize:11,color:'#888780'}}>공통 {avgComp} · 직무 {avgJikmu} · 업적 {avgDam}</span>
+          <span style={{fontSize:16,fontWeight:700,color:scoreColor(avgTotal)}}>{avgTotal}점</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResultDetail({candidate,submissions,onBack}){
+  const overallAvg=submissions.length>0?Math.round(submissions.reduce((a,s)=>a+s.total,0)/submissions.length):null;
+  const rank1Subs=getGroupSubs(submissions,candidate.rank1);
+  const rank2Subs=getGroupSubs(submissions,candidate.rank2);
+  const avg1=calcAvg(rank1Subs,'total');
+  const avg2=calcAvg(rank2Subs,'total');
+  const detailId='detail-'+candidate.id;
+  return(
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+        <button className="back-btn" onClick={onBack} style={{margin:0}}><i className="ti ti-arrow-left"/> 목록으로</button>
+        <button className="btn sm" onClick={()=>downloadPDF(detailId, candidate.name+'_면접결과')} style={{background:'#E6F1FB',color:'#185FA5',border:'none'}}>
+          <i className="ti ti-file-type-pdf"/> PDF 저장
+        </button>
+      </div>
+      <div className="card" id={detailId}>
         <div className="card-head">
           <span className="card-head-title">{candidate.name} 상세 결과</span>
           <span className="card-sub">1순위 {candidate.rank1} · 2순위 {candidate.rank2}</span>
         </div>
+
+        {/* 요약 점수 */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,padding:'1rem 1.25rem',borderBottom:'1px solid #e0ddd5'}}>
+          {[['1순위 그룹 평균',avg1,'bt'],['2순위 그룹 평균',avg2,'bb'],['전체 평균',overallAvg,null]].map(([l,v,b])=>(
+            <div key={l} className="stat-card" style={{textAlign:'center'}}>
+              <p className="stat-lbl">{l}</p>
+              <p style={{fontSize:22,fontWeight:700,color:v?scoreColor(v):'#b4b2a9'}}>{v??'–'}<span style={{fontSize:12,fontWeight:400,color:'#888780'}}>점</span></p>
+            </div>
+          ))}
+        </div>
+
         {submissions.length===0&&<div className="empty">제출된 평가가 없습니다.</div>}
-        {submissions.map((s,i)=>(
-          <div key={s.id} style={{padding:'.875rem 1.25rem',borderBottom:i<submissions.length-1?'1px solid #e0ddd5':'none'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-              <p style={{fontWeight:500,fontSize:14}}>{s.interviewer_name}</p>
-              <div style={{textAlign:'right'}}>
-                <p style={{fontSize:22,fontWeight:700,color:scoreColor(s.total)}}>{s.total}점</p>
-                <p style={{fontSize:10,color:'#888780'}}>{new Date(s.submitted_at).toLocaleString('ko-KR')}</p>
-              </div>
-            </div>
-            <div className="stat-grid" style={{marginBottom:8}}>
-              {[['공통역량',s.comp_total,20],['직무역량',s.jikmu_total,30],['업적/역량평가',s.damyeon,50]].map(([l,val,mx])=>(
-                <div key={l} className="stat-card">
-                  <p className="stat-lbl">{l}</p>
-                  <p className="stat-val">{val??0}<span style={{fontSize:11,color:'#888780',fontWeight:400}}>/{mx}</span></p>
-                </div>
-              ))}
-            </div>
-            {s.memo&&<p style={{fontSize:11,color:'#888780',marginBottom:4}}><strong>메모:</strong> {s.memo}</p>}
-            {s.comment&&<p style={{fontSize:12,color:'#1a1a18',background:'#f9f8f4',padding:'6px 10px',borderRadius:6,borderLeft:'3px solid #1D9E75'}}>{s.comment}</p>}
-          </div>
-        ))}
-        {submissions.length>0&&(
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.875rem 1.25rem',background:'#f9f8f4',borderTop:'1px solid #e0ddd5'}}>
-            <p style={{fontSize:13,fontWeight:500}}>면접관 평균 총점 ({submissions.length}명)</p>
-            <p style={{fontSize:28,fontWeight:700,color:scoreColor(avg)}}>{avg}점</p>
-          </div>
-        )}
+
+        {/* 1순위 그룹 */}
+        <SubGroup title={`1순위 면접관 그룹 (${rank1Subs.length}명)`} badge="bt" subs={rank1Subs} dept={candidate.rank1}/>
+
+        {/* 2순위 그룹 */}
+        <SubGroup title={`2순위 면접관 그룹 (${rank2Subs.length}명)`} badge="bb" subs={rank2Subs} dept={candidate.rank2}/>
       </div>
     </div>
   );
