@@ -95,6 +95,15 @@ input[type=number]:focus{border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,1
 .home-card{padding:2rem 1.5rem;text-align:center;cursor:pointer;background:#fff;border:1px solid #e0ddd5;border-radius:12px;transition:border-color .15s,box-shadow .15s;font-family:inherit;width:100%;}
 .home-card:hover{border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.08);}
 .icon-lg{font-size:28px;display:block;margin-bottom:10px;color:#888780;}
+
+@media print {
+  body { background: #fff !important; padding: 0 !important; }
+  .wrap > *:not(#print-area) { display: none !important; }
+  #print-area { display: block !important; }
+  .btn, button { display: none !important; }
+  .back-btn { display: none !important; }
+  .tab-bar { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -105,7 +114,6 @@ const SUPABASE_URL = 'https://wcjlwjfucbcvamtioecx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indjamx3amZ1Y2JjdmFtdGlvZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzAwNzQsImV4cCI6MjA5MzcwNjA3NH0.gcIeOI0eFfnmxJfjg0k3zXJE-KDUGEElyD1opehzH8Q';
 const ADMIN_CODE   = '2025';
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -139,16 +147,7 @@ function calcAvg(arr, key){
 }
 
 function downloadPDF(elementId, filename){
-  const el = document.getElementById(elementId);
-  if(!el){ alert('출력할 내용을 찾을 수 없습니다.'); return; }
-  const opt = {
-    margin: 8,
-    filename: filename+'.pdf',
-    image: { type:'jpeg', quality:0.98 },
-    html2canvas: { scale:2, useCORS:true },
-    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
-  };
-  html2pdf().set(opt).from(el).save();
+  window.print();
 }
 const COMPS = [
   { id:'c1', name:'1. 자기주도적 학습 및 변화 수용성', desc:'새로운 업무·환경 변화에 스스로 학습하고 적극적으로 적응하며 성장하려는 태도와 역량',
@@ -450,7 +449,7 @@ function ResultsList({candidates,submissions,onSelect}){
         </button>
       </div>
     </div>
-    <div className="card" id="result-list">
+    <div id="print-area"><div className="card" id="result-list">
       <div className="card-head"><span className="card-head-title">지원자별 결과 요약</span><span className="card-sub">면접관 평균 기준</span></div>
       {rows.length===0&&<div className="empty">등록된 지원자가 없습니다.</div>}
       {rows.map((c,i)=>(
