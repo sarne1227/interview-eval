@@ -436,13 +436,7 @@ function ResultsList({candidates,submissions,onSelect}){
     return{...c,subs,avg};
   }).sort((a,b)=>sortBy==='name'?a.name.localeCompare(b.name):(b.avg??-1)-(a.avg??-1));
 
-  function downloadCSV(){
-    const headers = ['지원자','1순위','2순위','면접관','공통역량','직무역량','업적/역량평가','총점','제출시간','메모','최종평가코멘트'];
-    const csvRows = [headers.join(',')];
-    rows.forEach(c=>{
-      if(c.subs.length===0){
-        csvRows.push([c.name, c.rank1, c.rank2, '미제출','','','','','','',''].join(','));
-      } else {
+ else {
         c.subs.forEach(s=>{
           const row = [
             c.name, c.rank1, c.rank2,
@@ -480,9 +474,6 @@ function ResultsList({candidates,submissions,onSelect}){
         {[['total','총점'],['name','이름']].map(([k,l])=>(
           <button key={k} className={`btn sm${sortBy===k?' primary':''}`} onClick={()=>setSortBy(k)}>{l}</button>
         ))}
-        <button className="btn sm" onClick={downloadCSV} style={{background:'#1D9E75',color:'#fff',border:'none'}}>
-          <i className="ti ti-download"/> 엑셀 다운로드
-        </button>
       </div>
     </div>
     <div className="card">
