@@ -464,7 +464,6 @@ function ResultsList({candidates,submissions,onSelect}){
       }
     });
     const blob = new Blob([csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
-')], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
