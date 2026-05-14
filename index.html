@@ -146,7 +146,105 @@ function calcAvg(arr, key){
 }
 
 function downloadPDF(elementId, filename){
-  window.print();
+  // no-op, replaced per element
+}
+
+function printResultList(rows){
+  const win = window.open('','_blank','width=900,height=700');
+  const rowsHtml = rows.map((c,i)=>{
+    const avg1 = c.avg1 !== null ? c.avg1+'점' : '-';
+    const avg2 = c.avg2 !== null ? c.avg2+'점' : '-';
+    const avgT = c.avgTotal !== null ? c.avgTotal+'점' : '미제출';
+    return `<tr>
+      <td style="text-align:center;font-weight:700;color:#888">${i+1}</td>
+      <td style="font-weight:600">${c.name}</td>
+      <td>${c.rank1}</td>
+      <td style="color:#0F6E56;font-weight:600">${avg1}</td>
+      <td>${c.rank2}</td>
+      <td style="color:#185FA5;font-weight:600">${avg2}</td>
+      <td style="font-weight:700;font-size:16px;color:${c.avgTotal>=80?'#1D9E75':c.avgTotal>=60?'#378ADD':'#BA7517'}">${avgT}</td>
+      <td style="text-align:center">${c.subs.length}명</td>
+    </tr>`;
+  }).join('');
+
+  win.document.write(`<!DOCTYPE html><html lang="ko"><head>
+    <meta charset="UTF-8">
+    <title>면접 결과 요약</title>
+    <style>
+      body { font-family: 'Noto Sans KR', sans-serif; padding: 30px; color: #1a1a18; }
+      h2 { margin-bottom: 6px; font-size: 20px; }
+      p { color: #888; font-size: 12px; margin-bottom: 20px; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th { background: #f4f3ef; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e0ddd5; font-size: 11px; color: #888; }
+      td { padding: 12px 12px; border-bottom: 1px solid #e0ddd5; }
+      tr:hover td { background: #fafaf8; }
+      @media print { body { padding: 10px; } }
+    </style>
+  </head><body>
+    <h2>면접 결과 요약</h2>
+    <p>전체 면접관 평균 총점 기준 순위 · 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+    <table>
+      <thead>
+        <tr>
+          <th>순위</th><th>지원자</th><th>1순위 직군</th><th>1순위 평균</th>
+          <th>2순위 직군</th><th>2순위 평균</th><th>전체 평균</th><th>제출</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 500);
+}
+
+function printDetail(candidate, rank1Subs, rank2Subs, avg1, avg2, overallAvg){
+  const win = window.open('','_blank','width=900,height=700');
+  function subHtml(subs){
+    return subs.map(s=>`
+      <div style="border:1px solid #e0ddd5;border-radius:8px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <strong style="font-size:15px">${s.interviewer_name}</strong>
+          <span style="font-size:20px;font-weight:700;color:#378ADD">${s.total}점</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div style="background:#f4f3ef;padding:8px 12px;border-radius:6px"><div style="font-size:10px;color:#888">공통역량</div><div style="font-size:16px;font-weight:600">${s.comp_total??0}<span style="font-size:11px;color:#888">/20</span></div></div>
+          <div style="background:#f4f3ef;padding:8px 12px;border-radius:6px"><div style="font-size:10px;color:#888">직무역량</div><div style="font-size:16px;font-weight:600">${s.jikmu_total??0}<span style="font-size:11px;color:#888">/30</span></div></div>
+          <div style="background:#f4f3ef;padding:8px 12px;border-radius:6px"><div style="font-size:10px;color:#888">업적/역량평가</div><div style="font-size:16px;font-weight:600">${s.damyeon??0}<span style="font-size:11px;color:#888">/50</span></div></div>
+        </div>
+        ${s.comment?`<div style="background:#f9f8f4;border-left:3px solid #1D9E75;padding:8px 12px;border-radius:4px;font-size:12px;line-height:1.6">${s.comment}</div>`:''}
+      </div>`).join('');
+  }
+
+  win.document.write(`<!DOCTYPE html><html lang="ko"><head>
+    <meta charset="UTF-8">
+    <title>${candidate.name} 면접 상세 결과</title>
+    <style>
+      body { font-family: 'Noto Sans KR', sans-serif; padding: 30px; color: #1a1a18; max-width: 800px; }
+      h2 { margin-bottom: 4px; } p { color: #888; font-size: 12px; margin-bottom: 20px; }
+      .avg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+      .avg-card { background: #f4f3ef; border-radius: 8px; padding: 16px; text-align: center; }
+      .avg-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+      .avg-val { font-size: 24px; font-weight: 700; color: #1D9E75; }
+      .group-title { font-size: 14px; font-weight: 600; margin: 20px 0 12px; padding: 8px 12px; background: #E1F5EE; border-radius: 6px; color: #0F6E56; }
+      @media print { body { padding: 10px; } }
+    </style>
+  </head><body>
+    <h2>${candidate.name} 면접 상세 결과</h2>
+    <p>1순위: ${candidate.rank1} · 2순위: ${candidate.rank2} · 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+    <div class="avg-grid">
+      <div class="avg-card"><div class="avg-label">1순위 그룹 평균</div><div class="avg-val">${avg1??'-'}점</div></div>
+      <div class="avg-card"><div class="avg-label">2순위 그룹 평균</div><div class="avg-val" style="color:#378ADD">${avg2??'-'}점</div></div>
+      <div class="avg-card"><div class="avg-label">전체 평균</div><div class="avg-val">${overallAvg??'-'}점</div></div>
+    </div>
+    <div class="group-title">1순위 면접관 그룹 — ${candidate.rank1} (${rank1Subs.length}명)</div>
+    ${subHtml(rank1Subs)}
+    <div class="group-title" style="background:#E6F1FB;color:#185FA5">2순위 면접관 그룹 — ${candidate.rank2} (${rank2Subs.length}명)</div>
+    ${subHtml(rank2Subs)}
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 500);
 }
 const COMPS = [
   { id:'c1', name:'1. 자기주도적 학습 및 변화 수용성', desc:'새로운 업무·환경 변화에 스스로 학습하고 적극적으로 적응하며 성장하려는 태도와 역량',
@@ -443,7 +541,7 @@ function ResultsList({candidates,submissions,onSelect}){
         {[['total','총점'],['name','이름']].map(([k,l])=>(
           <button key={k} className={`btn sm${sortBy===k?' primary':''}`} onClick={()=>setSortBy(k)}>{l}</button>
         ))}
-        <button className="btn sm" onClick={()=>downloadPDF('result-list','면접결과요약')} style={{background:'#E6F1FB',color:'#185FA5',border:'none'}}>
+        <button className="btn sm" onClick={()=>printResultList(rows)} style={{background:'#E6F1FB',color:'#185FA5',border:'none'}}>
           <i className="ti ti-file-type-pdf"/> PDF 저장
         </button>
       </div>
@@ -531,7 +629,7 @@ function ResultDetail({candidate,submissions,onBack}){
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
         <button className="back-btn" onClick={onBack} style={{margin:0}}><i className="ti ti-arrow-left"/> 목록으로</button>
-        <button className="btn sm" onClick={()=>downloadPDF(detailId, candidate.name+'_면접결과')} style={{background:'#E6F1FB',color:'#185FA5',border:'none'}}>
+        <button className="btn sm" onClick={()=>printDetail(candidate,rank1Subs,rank2Subs,avg1,avg2,overallAvg)} style={{background:'#E6F1FB',color:'#185FA5',border:'none'}}>
           <i className="ti ti-file-type-pdf"/> PDF 저장
         </button>
       </div>
