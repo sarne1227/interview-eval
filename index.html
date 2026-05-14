@@ -450,7 +450,7 @@ function ResultsList({candidates,submissions,onSelect}){
         </button>
       </div>
     </div>
-    <div className="card">
+    <div className="card" id="result-list">
       <div className="card-head"><span className="card-head-title">지원자별 결과 요약</span><span className="card-sub">면접관 평균 기준</span></div>
       {rows.length===0&&<div className="empty">등록된 지원자가 없습니다.</div>}
       {rows.map((c,i)=>(
